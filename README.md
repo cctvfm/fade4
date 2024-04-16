@@ -1,5 +1,7 @@
 # fade4
-A performance MIDI controller based on SAMD21G
+A performance MIDI and CV controller based on SAMD21G
+
+![Fade 4](https://raw.githubusercontent.com/cctvfm/fade4/main/fade4.png)
 
 Fade 4 runs on an Atmel SAMD21G microcontroller running the Feather M0 Bootloader. This allows Fade 4 to be developed on using the Arduino programming environment, and make use of Arduino libraries.
 
