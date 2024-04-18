@@ -43,3 +43,5 @@ All firmware updates can be done over the USB C port. The 4 pin header is just f
 *November 2023:* 5 units built for testing. These are V1.0 units. They have an issue where the ADC is referenced to 5V and not 3.3V, so depending on USB power supply, the faders may not reach all the way to 127. fade4.ino.feather_m0-MAX975.uf2 provided as a fix for these units.
 
 *April 15 2024:* Initial kit run. V1.1 released, fixes above issue. Build guide published to cctv.fm/fade4. Shipped with V1.1 preflashed.
+
+*April 17 2023:* Bug fix, channels via TRS do not match channels via USB. Due to USB library counting channels from 0 and MIDI library counting from 1.
