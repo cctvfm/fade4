@@ -5,7 +5,7 @@
 #include <MIDIUSB.h>
 
 
-//2#define MAXPOTVALUE 1015  //Change this to a lower value on V1 boards with certain power supplies (<5V)
+//#define MAXPOTVALUE 1015  //Change this to a lower value on V1 boards with certain power supplies (<5V)
 //for example:
 #define MAXPOTVALUE 975
 
@@ -407,6 +407,7 @@ void update_all (void)
       {
         if(x==0)
         {
+          
           options[x]= map(potvalues[x],0,MAXPOTVALUE,10,99);
 
           LEDchars[0]=charactertoLED('B',LETTER,0);
@@ -439,7 +440,10 @@ void sendMIDI (unsigned int data, unsigned char channel, unsigned char message, 
   {
     //data = constrain(data,25,1010);
     //temp=map(data,25,1010,0,127);
+    //temp = constrain(data,0,MAXPOTVALUE);
     temp = map(data,0,MAXPOTVALUE, 0, 127);
+    if(temp>127)
+      temp = 127;
     if(firstbootread[lane])
     {
       lastdata[lane]=temp;
