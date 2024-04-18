@@ -5,7 +5,7 @@
 #include <MIDIUSB.h>
 
 
-//#define MAXPOTVALUE 1015  //Change this to a lower value on V1 boards with certain power supplies (<5V)
+//2#define MAXPOTVALUE 1015  //Change this to a lower value on V1 boards with certain power supplies (<5V)
 //for example:
 #define MAXPOTVALUE 975
 
@@ -469,7 +469,7 @@ void sendMIDI (unsigned int data, unsigned char channel, unsigned char message, 
 
       
 
-        MIDI.sendControlChange(message, temp, channel);
+        MIDI.sendControlChange(message, temp, channel+1);
         midiEventPacket_t event = {0x0B, (uint8_t)(0xB0 | channel), message, temp};
         MidiUSB.sendMIDI(event);
         MidiUSB.flush();
@@ -706,7 +706,10 @@ void welcome (void)
 unsigned long int lasttc3micros;
 void TC3_Handler() {
   static char counter = 0;
-
+  //TcCount16* TC = (TcCount16*) TC3;
+  
+  // If this interrupt is due to the compare register matching the timer count
+  // we toggle the LED.
   if (TC3->COUNT16.INTFLAG.bit.MC0 == 1) {
     TC3->COUNT16.INTFLAG.bit.MC0 = 1;
     
