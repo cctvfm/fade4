@@ -5,9 +5,9 @@
 #include <MIDIUSB.h>
 
 
-//#define MAXPOTVALUE 1015  //Change this to a lower value on V1 boards with certain power supplies (<5V)
+#define MAXPOTVALUE 1015  //Change this to a lower value on V1 boards with certain power supplies (<5V)
 //for example:
-#define MAXPOTVALUE 975
+//#define MAXPOTVALUE 975
 
 #define CPU_HZ 48000000
 #define TIMER_PRESCALER_DIV 1024
@@ -361,6 +361,8 @@ void update_all (void)
       if(state == SET_MESSAGE)
       {
         messages[x]= map(potvalues[x],0,MAXPOTVALUE,0,129);
+        if(messages[x]>129)
+          messages[x]=129;
         //we're in the SET_MESSAGE MODE, so movement of the fader sets a new message
         //display the current value on the LEDs
         if(messages[x]<=127)  //standard CC
@@ -392,6 +394,8 @@ void update_all (void)
       else if(state == SET_CHANNEL)
       {
         channels[x]= map(potvalues[x],0,MAXPOTVALUE,0,15);
+        if(channels[x]>15)
+          channels[x] = 15;
         //we're in the SET_CHANNEL MODE, so movement of the fader sets a new message
         //display the current value on the LEDs
 
@@ -409,7 +413,8 @@ void update_all (void)
         {
           
           options[x]= map(potvalues[x],0,MAXPOTVALUE,10,99);
-
+          if(options[x]>99)
+            options[x] = 99;
           LEDchars[0]=charactertoLED('B',LETTER,0);
           LEDchars[1]=charactertoLED((options[x]%100)/10,NUMBER,0);
           LEDchars[2]=charactertoLED(0,RAW,0);
@@ -427,6 +432,7 @@ void update_all (void)
     if(update[x]==TRUE)
     {
       update[x]=FALSE;
+      
       sendMIDI(potvalues[x],channels[x],messages[x],x);
     }
   }
@@ -481,7 +487,7 @@ void sendMIDI (unsigned int data, unsigned char channel, unsigned char message, 
     }    
     else
     {
-      //Serial.print(".");  //if this line is commented out, the sweep does not go from 0-127 ... why? Just over usb serial, some minor bug not worth investigating.
+      //Serial.print(".");  //for debugging only
       //Serial.println(lastdata[lane]);
     }
 
@@ -490,35 +496,63 @@ void sendMIDI (unsigned int data, unsigned char channel, unsigned char message, 
   { //wide range, 14 bit?
     int pbval;
     pbval = data<<4;
-    midiEventPacket_t event = {0x0E, (uint8_t)(0xE0 | channel), (uint8_t)(data>>8), (uint8_t)data};
-    pbval = pbval - 8192;
-    MIDI.sendPitchBend(pbval, channel);
-    
-    MidiUSB.sendMIDI(event);
-    MidiUSB.flush();
 
-    temp = data&0xFF;
-    lastdata[lane]=(data&0xFF);
-    
-    LEDchars[0]=charactertoLED('B',LETTER,0);
-    LEDchars[1]=charactertoLED((data%256)/16,HEX,0);
-    LEDchars[2]=charactertoLED(data/256,HEX,0);
-    LEDchars[3]=charactertoLED(data%16, HEX,0);
+    if(firstbootread[lane])
+    {
+      lastdata[lane]=pbval;
+      firstbootread[lane]=0;
+    }
+    if(pbval!=lastdata[lane])
+    {
+      lastdata[lane]=pbval;
+      midiEventPacket_t event = {0x0E, (uint8_t)(0xE0 | channel), (uint8_t)(data>>8), (uint8_t)data};
+      pbval = pbval - 8192;
+  
+      
+      MIDI.sendPitchBend(pbval, channel+1);
+      
+      MidiUSB.sendMIDI(event);
+      MidiUSB.flush();
+  
+      temp = data&0xFF;
+      
+      
+      LEDchars[0]=charactertoLED('B',LETTER,0);
+      LEDchars[1]=charactertoLED((data%256)/16,HEX,0);
+      LEDchars[2]=charactertoLED(data/256,HEX,0);
+      LEDchars[3]=charactertoLED(data%16, HEX,0);
+    }
   }
+  
   else if(message == 129) //Program Change
   {
-    temp = data>>3;
-    MIDI.sendProgramChange(temp,channel);
-    midiEventPacket_t event = {0x0C, (uint8_t)(0xC0 | channel), (uint8_t)(data>>3)};
-    MidiUSB.sendMIDI(event);
-    MidiUSB.flush();
+    temp = map(data,0,MAXPOTVALUE, 0, 127);
+    if(temp>127)
+      temp = 127;
 
-    lastdata[lane]=(temp);
-    LEDchars[0]=charactertoLED('P',LETTER,0);
-    LEDchars[1]=charactertoLED((temp%100)/10,NUMBER,0);
-    LEDchars[2]=charactertoLED(temp/100,NUMBER,0);
-    LEDchars[3]=charactertoLED(temp%10, NUMBER,0);
+
+    if(firstbootread[lane])
+    {
+      lastdata[lane]=temp;
+      firstbootread[lane]=0;
+    }
+    if(temp!=lastdata[lane])
+    {
+      lastdata[lane]=temp;
+      MIDI.sendProgramChange(temp,channel+1);
+      midiEventPacket_t event = {0x0C, (uint8_t)(0xC0 | channel), (uint8_t)(temp)};
+      MidiUSB.sendMIDI(event);
+      MidiUSB.flush();
+  
+       
+  
+      LEDchars[0]=charactertoLED('P',LETTER,0);
+      LEDchars[1]=charactertoLED((temp%100)/10,NUMBER,0);
+      LEDchars[2]=charactertoLED(temp/100,NUMBER,0);
+      LEDchars[3]=charactertoLED(temp%10, NUMBER,0);
+    }
   }
+  
   else
     return;
     //invalid message type
